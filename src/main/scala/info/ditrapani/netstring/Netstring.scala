@@ -3,31 +3,31 @@ package info.ditrapani.netstring
 import scala.deriving.Mirror
 import scala.compiletime.{erasedValue, summonInline}
 
-trait NetString[A]:
+trait Netstring[A]:
   extension (a: A) def toNetstring: String
 
-object NetString:
-  inline given derived[T](using m: Mirror.Of[T]): NetString[T] =
-    val elemInstances: List[NetString[_]] = summonAll[m.MirroredElemTypes]
+object Netstring:
+  inline given derived[T](using m: Mirror.Of[T]): Netstring[T] =
+    val elemInstances: List[Netstring[_]] = summonAll[m.MirroredElemTypes]
     inline m match
       case s: Mirror.SumOf[T] => eqSum(s, elemInstances)
       case p: Mirror.ProductOf[T] => eqProduct(p, elemInstances)
 
-  inline def summonAll[T <: Tuple]: List[NetString[_]] =
+  private inline def summonAll[T <: Tuple]: List[Netstring[_]] =
     inline erasedValue[T] match
       case _: EmptyTuple => Nil
-      case _: (t *: ts) => summonInline[NetString[t]] :: summonAll[ts]
+      case _: (t *: ts) => summonInline[Netstring[t]] :: summonAll[ts]
 
-  def eqSum[T](s: Mirror.SumOf[T], elems: List[NetString[_]]): NetString[T] =
-    new NetString[T]:
+  private def eqSum[T](s: Mirror.SumOf[T], elems: List[Netstring[_]]): Netstring[T] =
+    new Netstring[T]:
       extension (a: T)
         def toNetstring: String =
           val ord = s.ordinal(a)
           val tag = s"ord$ord"
           s"${tag.toNetstring}${netstringify(a, elems(ord))}".toNetstring
 
-  def eqProduct[T](p: Mirror.ProductOf[T], elems: List[NetString[_]]): NetString[T] =
-    new NetString[T]:
+  private def eqProduct[T](p: Mirror.ProductOf[T], elems: List[Netstring[_]]): Netstring[T] =
+    new Netstring[T]:
       extension (a: T)
         def toNetstring: String =
           val str = iterator(a)
@@ -36,21 +36,21 @@ object NetString:
             .mkString
           str.toNetstring
 
-  def iterator[T](p: T) = p.asInstanceOf[Product].productIterator
+  private def iterator[T](p: T) = p.asInstanceOf[Product].productIterator
 
-  def netstringify(a: Any, netstring: NetString[_]): String =
-    given NetString[Any] = netstring.asInstanceOf[NetString[Any]]
+  private def netstringify(a: Any, netstring: Netstring[_]): String =
+    given Netstring[Any] = netstring.asInstanceOf[Netstring[Any]]
     a.toNetstring
 
-given NetString[String] with
+given Netstring[String] with
   extension (a: String) def toNetstring: String = s"${a.length()}:$a,"
 
-given NetString[Int] with
+given Netstring[Int] with
   extension (a: Int)
     def toNetstring: String =
       a.toString.toNetstring
 
-given NetString[Boolean] with
+given Netstring[Boolean] with
   extension (a: Boolean)
     def toNetstring: String =
       a.toString.toNetstring
