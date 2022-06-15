@@ -1,8 +1,8 @@
 Try out scala 3 type class derivation
 
-sbt run
-sbt test
-sbt fmt
+- sbt run
+- sbt test
+- sbt fmt
 
 Let's encode netstrings.
 
