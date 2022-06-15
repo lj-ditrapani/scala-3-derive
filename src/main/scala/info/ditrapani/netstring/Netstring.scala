@@ -18,27 +18,30 @@ object Netstring:
       case _: EmptyTuple => Nil
       case _: (t *: ts) => summonInline[Netstring[t]] :: summonAll[ts]
 
-  private def eqSum[T](s: Mirror.SumOf[T], elems: List[Netstring[_]]): Netstring[T] =
+  private def eqSum[T](s: Mirror.SumOf[T], netstringIntances: List[Netstring[_]]): Netstring[T] =
     new Netstring[T]:
       extension (a: T)
         def toNetstring: String =
           val ord = s.ordinal(a)
           val tag = s"ord$ord"
-          s"${tag.toNetstring}${netstringify(a, elems(ord))}".toNetstring
+          s"${tag.toNetstring}${anyNetstringify(a, netstringIntances(ord))}".toNetstring
 
-  private def eqProduct[T](p: Mirror.ProductOf[T], elems: List[Netstring[_]]): Netstring[T] =
+  private def eqProduct[T](
+      p: Mirror.ProductOf[T],
+      netstringIntances: List[Netstring[_]],
+  ): Netstring[T] =
     new Netstring[T]:
       extension (a: T)
         def toNetstring: String =
           val str = iterator(a)
-            .zip(elems)
-            .map { case (v, netstring) => netstringify(v, netstring) }
+            .zip(netstringIntances)
+            .map { case (v, netstring) => anyNetstringify(v, netstring) }
             .mkString
           str.toNetstring
 
   private def iterator[T](p: T) = p.asInstanceOf[Product].productIterator
 
-  private def netstringify(a: Any, netstring: Netstring[_]): String =
+  private def anyNetstringify(a: Any, netstring: Netstring[_]): String =
     given Netstring[Any] = netstring.asInstanceOf[Netstring[Any]]
     a.toNetstring
 
@@ -54,3 +57,5 @@ given Netstring[Boolean] with
   extension (a: Boolean)
     def toNetstring: String =
       a.toString.toNetstring
+
+given [T: Netstring]: Netstring[List[T]] = Netstring.derived
