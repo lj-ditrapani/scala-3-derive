@@ -4,7 +4,6 @@ addCommandAlias("fmt", "scalafmtAll")
 
 lazy val derive = (project in file("."))
   .settings(
-    name := "reporting",
     scalacOptions := compilerOptions,
     libraryDependencies ++= Seq(
       dependencies.scalaTest,
